@@ -1,13 +1,13 @@
 # week_06
 ## Week-6_Assignment_SQL_Part1
 ###  1.Show all customers whose last names start with T. Order them by first name from A-Z.
-(a) Identify the required table from the dvdrental, to get the information of customer last names and 
+STEP-1. Identify the required table from the dvdrental, to get the information of customer last names and 
 
-(b) use the WHERE clause with wild card operator 'T%'.
+STEP-2. use the WHERE clause with wild card operator 'T%'
+
+STEP-3. then ORDER BY fist_name in ascending order to get the names in alphabetical order from A-Z.
 
 #### Below is the query I used to extract to answer for the question-1:
-
-CREATE TABLE HW_1 AS
 
 SELECT *
 
@@ -18,11 +18,10 @@ WHERE last_name LIKE 'T%'
 ORDER BY first_name ASC;
 
 ###  2.Show all rentals returned from 5/28/2005 to 6/1/2005
-(a) Identify the table which has returned dates in it, then use the where clause to get the dates.
+
+STEP-1. Identify the table which has returned dates in it, i used rental table and then i used the where clause to get the return dates between '2005-05-28' AND '2005-06-01'.
 
 #### Below is the query I used to extract to answer for the question-2:
-
-CREATE TABLE HW_2 AS
 
 SELECT *
 
@@ -41,28 +40,23 @@ STEP-2. To get the most rented movies, i have COUNTed DISTINCT rental_id which i
 STEP-3. Finally, group by title and order by rental_freq in Descending order to get highest to least to movies rented.       
          
 #### Below is the query I used to extract to answer for the question-3:
+	
 
-CREATE TABLE HW_3 as	
-
-SELECT COUNT(DISTINCT r.rental_id) AS rental_freq, m.title
-
-FROM inventory AS i
-
-INNER JOIN rental AS r
-
-ON i.inventory_id = r.inventory_id
-
-INNER JOIN film as f
-
-ON i.film_id = f.film_id
-
-INNER JOIN movies as m
-
-ON f.title = m.title
-
-GROUP BY m.title
-
-ORDER BY m.title, rental_freq DESC;
+ SELECT title, COUNT(r.rental_id) AS rental_freq
+ 
+ FROM rental AS r
+ 
+ INNER JOIN inventory as i
+ 
+ ON r.inventory_id = i.inventory_id
+ 
+ INNER JOIN film as f
+ 
+ on i.film_id = f.film_id
+ 
+ GROUP BY title
+ 
+ ORDER BY rental_freq DESC, title;
 	
 ### 4.Show how much each customer spent on movies (for all time) . Order them from least to most.	
 
@@ -76,8 +70,6 @@ STEP-3. To get the Amount spent on movies, i used aggregate function SUM to amou
 STEP-4. Finally, group by customer_id and order by Amt_spent_on_movies in Ascending order to get least to highest amount, spent on movies by each customer.
         
 #### Below is the query I used to extract to answer for the question-4:
-
-CREATE TABLE HW_4 AS
 
 SELECT concat(c.first_name, ' ', c.last_name) AS customer_name, c.customer_id, SUM(p.amount) AS Amt_spent_on_movies
 
@@ -106,30 +98,31 @@ STEP-5. GROUP BY actor_name, actor_id, release_year and then order by movie_coun
 
 #### Below is the query I used to extract to answer for the question-5:
 
-CREATE TABLE HW_5 AS
-
-SELECT concat(a.first_name, ' ', a.last_name) AS actor_name, actor_id, release_year, COUNT(DISTINCT film_id) AS movie_count
+SELECT concat(a.first_name, ' ', a.last_name) AS actor_name, a.actor_id, release_year, COUNT(DISTINCT f.film_id) AS movie_count
 
 FROM film AS f
 
 INNER JOIN film_actor AS fa
 
-USING(film_id)
+ON f.film_id = fa.film_id
 
 INNER JOIN actor AS a
 
-USING(actor_id)
+ON fa.actor_id = a.actor_id
 
 WHERE f.release_year = '2006'
 
-GROUP BY actor_name, actor_id, release_year
+GROUP BY actor_name, a.actor_id, release_year
 
 ORDER BY movie_count DESC;
 
 
 ### 6.Write an explain plan for 4 and 5. Show the queries and explain what is happening in each one. 
 
-Explain plan for 4:
+The EXPLAIN keyword, in SQL gives the description of how the queries are executed by the databases. It is used to get all the information about the SQL query.
+EXPLAIN keyword is used in the beginning of th query, before the SELECT statement. By using EXPLAIN, we can get the details of its execution step by step, instead of usual result output.
+
+EXPLAIN show the execution plan of a statement
 
 STEP-1. To identify how much amount each customer spent on movies, i have choosen to take customer table and payment table, and found the key to join both the tables as customer_id.
         
@@ -141,11 +134,7 @@ STEP-4. Finally, group by customer_id and order by Amt_spent_on_movies in Ascend
         
 #### Below is the query I used to extract to answer for the question-6:
 
-I have used the EXPLAIN with JSON format which shows a data model image
-
-EXPLAIN (FORMAT JSON)
-
-SELECT concat(c.first_name, ' ', c.last_name) AS customer_name, c.customer_id, SUM(p.amount) AS Amt_spent_on_movies
+EXPLAIN SELECT concat(c.first_name, ' ', c.last_name) AS customer_name, c.customer_id, SUM(p.amount) AS Amt_spent_on_movies
 
 FROM customer AS c
 
@@ -157,7 +146,26 @@ GROUP BY c.customer_id
 
 ORDER BY Amt_spent_on_movies ASC;
 
-![](images/explain_plan_1635298734310.svg)
+### Query plan:
+
+"Sort  (cost=448.31..449.81 rows=599 width=68)"
+
+"  Sort Key: (sum(p.amount))"
+
+"  ->  HashAggregate  (cost=411.69..420.68 rows=599 width=68)"
+
+"        Group Key: c.customer_id"
+
+"        ->  Hash Join  (cost=22.48..333.98 rows=15542 width=23)"
+
+"              Hash Cond: (p.customer_id = c.customer_id)"
+
+"              ->  Seq Scan on payment p  (cost=0.00..270.42 rows=15542 width=8)"
+
+"              ->  Hash  (cost=14.99..14.99 rows=599 width=17)"
+
+"                    ->  Seq Scan on customer c  (cost=0.00..14.99 rows=599 width=17)"
+
 	
 Explain plan for 5:
 
@@ -172,27 +180,57 @@ STEP-4. to get the most movies in 2006, i used WHERE release_year = 2006 filter 
 STEP-5. GROUP BY actor_name, actor_id, release_year and then order by movie_count in descending order to get most
         frequently rented movies in the year 2006 at the top.
         
-EXPLAIN (FORMAT JSON)
-
-SELECT concat(a.first_name, ' ', a.last_name) AS actor_name, a.actor_id, f.release_year, COUNT(DISTINCT f.film_id) AS movie_count
+EXPLAIN SELECT concat(a.first_name, ' ', a.last_name) AS actor_name, a.actor_id, release_year, COUNT(DISTINCT f.film_id) AS movie_count
 
 FROM film AS f
 
-INNER JOIN film_actor AS fa 
+INNER JOIN film_actor AS fa
 
-ON fa.film_id = f.film_id
+ON f.film_id = fa.film_id
 
-INNER JOIN actor AS a 
+INNER JOIN actor AS a
 
-ON a.actor_id = fa.actor_id
+ON fa.actor_id = a.actor_id
 
-WHERE f.release_year = 2006
+WHERE f.release_year = '2006'
 
-GROUP BY  actor_name,	a.actor_id,	f.release_year
+GROUP BY actor_name, a.actor_id, release_year
 
 ORDER BY movie_count DESC;
-    
-![](images/explain_plan_1635298164360.svg)
+
+### Query plan:
+
+"Sort  (cost=726.44..726.94 rows=200 width=48)"
+
+"  Sort Key: (count(DISTINCT f.film_id)) DESC"
+
+"  ->  GroupAggregate  (cost=636.65..718.80 rows=200 width=48)"
+
+"        Group Key: (concat(a.first_name, ' ', a.last_name)), a.actor_id, f.release_year"
+
+"        ->  Sort  (cost=636.65..652.58 rows=6372 width=44)"
+
+"              Sort Key: (concat(a.first_name, ' ', a.last_name)), a.actor_id"
+
+"              ->  Hash Join  (cost=85.50..234.01 rows=6372 width=44)"
+
+"                    Hash Cond: (fa.actor_id = a.actor_id)"
+
+"                    ->  Hash Join  (cost=79.00..194.50 rows=6372 width=10)"
+
+"                          Hash Cond: (fa.film_id = f.film_id)"
+
+"                          ->  Seq Scan on film_actor fa  (cost=0.00..98.72 rows=6372 width=4)"
+
+"                          ->  Hash  (cost=66.50..66.50 rows=1000 width=8)"
+
+"                                ->  Seq Scan on film f  (cost=0.00..66.50 rows=1000 width=8)"
+
+"                                      Filter: ((release_year)::integer = 2006)"
+
+"                    ->  Hash  (cost=4.00..4.00 rows=200 width=17)"
+
+"                          ->  Seq Scan on actor a  (cost=0.00..4.00 rows=200 width=17)"
 	
 ### 7.What is the average rental rate per genre?
 STEP-1. To identify the average rental rate, i picked category>film_category>film.
@@ -207,23 +245,22 @@ STEP-4. GROUP BY genre and then order by Avg_rental_rate in descending order to 
         
 #### Below is the query I used to extract to answer for the question-7:
 
-CREATE TABLE HW_7 AS
-
 SELECT c.name AS genre, AVG(rental_rate) AS Avg_rental_rate
 
 FROM category AS c
 
 INNER JOIN film_category AS fc
 
-USING (category_id)
+ON c.category_id = fc.category_id
 
 INNER JOIN film AS f
 
-USING (film_id)
+ON fc.film_id = f.film_id
 
 GROUP BY genre
 
 ORDER BY Avg_rental_rate DESC;
+
 
 ### 8.How many films were returned late? Early? On time?
 
@@ -238,8 +275,6 @@ STEP3. In this question i find the films were classified into 3 types based on t
 STEP4. using COUNT get the film_count, finally using GROUP BY and ORDER BY return_class will get the information.
 
 #### Below is the query I used to extract to answer for the question-8:
-
-CREATE TABLE HW_8 AS
 
 SELECT
 
@@ -257,11 +292,11 @@ FROM film AS f
   
 INNER JOIN inventory AS i
   
-USING (film_id)
+ON f.film_id = i.film_id
   
 INNER JOIN rental as r
   
-USING (inventory_id)
+ON i.inventory_id = r.inventory_id
   
 GROUP BY return_class
   
@@ -282,27 +317,25 @@ STEP4. GROUP BY genre then, ORDER BY total_sales in DESCENDING order to get high
 
 #### Below is the query I used to extract to answer for the question-9:
 
-CREATE TABLE HW_9 AS
-
 SELECT c.name AS genre, SUM(amount) AS total_sales
 
 FROM category AS c
 
 INNER JOIN film_category AS fc
 
-USING (category_id)
+ON c.category_id = fc.category_id
 
 INNER JOIN inventory AS i
 
-USING (film_id)
+ON fc.film_id = i.film_id
 
 INNER JOIN rental AS r
 
-USING (inventory_id)
+ON i.inventory_id = r.inventory_id
 
 INNER JOIN payment AS p
 
-USING (rental_id)
+ON r.rental_id = p.rental_id
 
 GROUP BY genre
 
@@ -314,32 +347,32 @@ STEP1. Creating views for question 8 and 9 here, i used the CREATE VIEW SQL stat
 
 CREATE VIEW films_returned AS
 
-SELECT 
+SELECT
 
 CASE WHEN DATE_PART('day', return_date - rental_date) < rental_duration THEN 'Early Return'
 
-WHEN DATE_PART('day', return_date - rental_date) = rental_duration THEN 'On time
-     '
+WHEN DATE_PART('day', return_date - rental_date) = rental_duration THEN 'On time'
+     
 ELSE 'Late Return' END
-	
+     
 AS return_class,
-
+  
 COUNT(title) AS film_count
-
+  
 FROM film AS f
-
+  
 INNER JOIN inventory AS i
-
-USING (film_id)
-
+  
+ON f.film_id = i.film_id
+  
 INNER JOIN rental as r
-
-USING (inventory_id)
-
+  
+ON i.inventory_id = r.inventory_id
+  
 GROUP BY return_class
-
+  
 ORDER BY return_class;
-	
+
 #### creating a view for table 9
 
 CREATE VIEW most_rented_and_total_sales AS	
@@ -350,48 +383,47 @@ FROM category AS c
 
 INNER JOIN film_category AS fc
 
-USING (category_id)
+ON c.category_id = fc.category_id
 
 INNER JOIN inventory AS i
 
-USING (film_id)
+ON fc.film_id = i.film_id
 
 INNER JOIN rental AS r
 
-USING (inventory_id)
+ON i.inventory_id = r.inventory_id
 
 INNER JOIN payment AS p
 
-USING (rental_id)
+ON r.rental_id = p.rental_id
 
 GROUP BY genre
 
 ORDER BY total_sales DESC;
 
 ### Bonus :
+
 ### 11.Write a query that shows how many films were rented each month. Group them by category and month. 
 
-CREATE TABLE HW_Bonus AS
-
-SELECT c.name AS genre, DATE_PART('Month', rental_date) AS Month_of_year,	COUNT(DISTINCT rental_id) AS film_cnt 
+SELECT c.name AS genre, DATE_PART('Month', rental_date) AS Month_of_year, COUNT(DISTINCT rental_id) AS film_cnt 
 
 FROM rental AS r
 
 INNER JOIN inventory AS i
 
-USING (inventory_id)
+ON r.inventory_id = i.inventory_id
 
 INNER JOIN film AS f
 
-USING (film_id)
+ON i.film_id = f.film_id
 
 INNER JOIN film_category AS fc
 
-USING (film_id)
+ON f.film_id = fc.film_id
 
 INNER JOIN category AS c 
 
-USING (category_id)
+ON fc.category_id = c.category_id
 
 GROUP BY genre, Month_of_year
 
